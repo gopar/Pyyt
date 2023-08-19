@@ -1,6 +1,14 @@
-import sys
-import uuid
-import logging
+"""
+Add:
+- Response class
+- Endpoint class
+- Handle method not allowed (405)
+- Example of handling requests
+
+Terminal:
+http -v -j POST 127.0.0.1:8000/cars car="nani"
+http -v -j DELETE 127.0.0.1:8000/cars car="nani"
+"""
 import json
 from typing import Dict, List, Optional
 from http import HTTPStatus
@@ -64,7 +72,7 @@ class Pyyt:
 
         for middleware in self.middlewares:
             status, headers, body = middleware.postprocess_request(
-                status, headers, body, request
+                status, headers, body
             )
 
         start_response(status, headers)
@@ -124,32 +132,4 @@ class CarsEndpoint:
         )
 
 
-class RequestIdMiddleware:
-    def preprocess_request(self, request):
-        request.id = str(uuid.uuid4())
-        return request
-
-    def postprocess_request(self, status, headers, body, request):
-        return status, headers, body
-
-
-class LoggingMiddleware:
-    def __init__(self):
-        self.logger = logging.getLogger(__name__)
-        self.logger.setLevel(logging.INFO)
-        # for demo purposes
-        handler = logging.StreamHandler(sys.stdout)
-        self.logger.addHandler(handler)
-
-    def preprocess_request(self, request):
-        return request
-
-    def postprocess_request(self, status, headers, body, request):
-        self.logger.info(f"Request {request.id} completed with status {status}")
-        return status, headers, body
-
-
-app = Pyyt(
-    routes={"/cars": CarsEndpoint()},
-    middlewares=[RequestIdMiddleware(), LoggingMiddleware()],
-)
+app = Pyyt(routes={"/cars": CarsEndpoint()})

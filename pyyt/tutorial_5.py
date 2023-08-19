@@ -1,3 +1,10 @@
+"""
+Add:
+- Middleware
+
+Terminal:
+http -v -j POST 127.0.0.1:8000/cars car="nani"
+"""
 import sys
 import uuid
 import logging
