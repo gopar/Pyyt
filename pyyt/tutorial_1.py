@@ -6,7 +6,7 @@
 - Advance Python Series
   - Knowledge of Python and data structures (eg, classes, decorators, magic methods, etc)
 
-- Pep 3333: https://peps.python.org/pep-3333/ (Reference)
+- PEP 3333: https://peps.python.org/pep-3333/ (Reference)
 """
 
 HELLO_WORLD = b"Hello world!\n"
@@ -26,3 +26,6 @@ class Pyyt:
         response_headers = [("Content-type", "text/plain")]
         start_response(status, response_headers)
         return [HELLO_YOUTUBE]
+
+
+app = Pyyt()
