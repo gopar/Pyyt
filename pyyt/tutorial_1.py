@@ -9,6 +9,7 @@
 - PEP 3333: https://peps.python.org/pep-3333/ (Reference)
 """
 
+HELLO_YOUTUBE = b"Hello Youtube!\n"
 HELLO_WORLD = b"Hello world!\n"
 
 
@@ -29,3 +30,4 @@ class Pyyt:
 
 
 app = Pyyt()
+app = simple_app
