@@ -5,31 +5,28 @@ Add:
 - Handle 404
 
 Terminal:
+https://github.com/httpie/cli
 http -v GET 127.0.0.1:8000 -f
 http -v GET 127.0.0.1:8000/hello -j
 """
-from typing import Dict, List
+from typing import Dict, List, Callable
 from http import HTTPStatus
 
 DEFAULT_CONTENT_TYPES = ["application/json", "text/html"]
 
 
 class Pyyt:
-    """
-    A minimalistic web framework
-    """
-
     def __init__(
         self,
         routes: Dict,
-        middlewares: List = None,
+        middleware: List = None,
         allowed_content_types: List[str] = None,
     ):
         self.routes = routes
-        self.middlewares = middlewares or []
+        self.middlewares = middleware or []
         self.allowed_content_types = allowed_content_types or DEFAULT_CONTENT_TYPES
 
-    def __call__(self, environ, start_response):
+    def __call__(self, environ: Dict, start_response: Callable):
         request = Request(environ)
         if (
             not hasattr(request, "CONTENT_TYPE")
@@ -51,8 +48,6 @@ class Pyyt:
         if route is None:
             status = HTTPStatus.NOT_FOUND
             status = f"{int(status)} {status.phrase}"
-
-            # Correct way is to handle the content type sent and answer in the same content type
             response_headers = [("Content-Type", "text/html")]
             start_response(status, response_headers)
             return []
@@ -62,21 +57,21 @@ class Pyyt:
             return 405
 
         response = route_method()
-        status, headers, body = response.wsgi_response()
+        status, headers, body = response.wsgi_responsea()
 
         for middleware in self.middlewares:
             status, headers, body = middleware.postprocess_request(
-                status, headers, body
+                status, headers, body, request
             )
 
-        start_response(status, response_headers)
+        start_response(status, headers)
         return [body]
 
 
 class Request:
-    def __init__(self, environ):
+    def __init__(self, environ: Dict):
         for key, value in environ.items():
             setattr(self, key.replace(".", "_"), value)
 
 
-app = Pyyt(routes=dict())
+app = Pyyt({})

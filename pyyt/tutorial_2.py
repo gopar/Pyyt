@@ -1,32 +1,25 @@
 """
 Refactor to use a class and rough draft of basic web framework life cycle
 """
-from typing import Dict, List
+from typing import Dict, List, Callable
 
 DEFAULT_CONTENT_TYPES = ["application/json", "text/html"]
 
 
 class Pyyt:
-    """
-    A minimalistic web framework
-    """
-
     def __init__(
-        self,
-        routes: Dict,
-        middleware: List = None,
-        allowed_content_types: List[str] = None,
+        routes: Dict, middleware: List = None, allowed_content_types: List[str] = None
     ):
         self.routes = routes
         self.middleware = middleware or []
         self.allowed_content_types = allowed_content_types or DEFAULT_CONTENT_TYPES
 
-    def __call__(self, environ, start_response):
+    def __call__(self, environ: Dict, start_response: Callable):
         request = Request(environ)
         if request.CONTENT_TYPE not in self.allowed_content_types:
             raise Error(f"{request.CONTENT_TYPE} not allowed")
 
-        for middleware in self.middlewares:
+        for middleware in self.middleware:
             request = middleware.preprocess_request(request)
 
         route = self.routes.get(request.PATH_INFO)
@@ -45,7 +38,7 @@ class Pyyt:
                 status, headers, body
             )
 
-        start_response(status, response_headers)
+        start_response(status, headers)
         return [body]
 
 

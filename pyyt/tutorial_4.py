@@ -10,7 +10,7 @@ http -v -j POST 127.0.0.1:8000/cars car="nani"
 http -v -j DELETE 127.0.0.1:8000/cars car="nani"
 """
 import json
-from typing import Dict, List, Optional
+from typing import Dict, List
 from http import HTTPStatus
 
 DEFAULT_CONTENT_TYPES = ["application/json", "text/html"]
@@ -86,23 +86,20 @@ class Request:
 
 
 class Response:
-    def __init__(
-        self, content_type=None, body=None, status: Optional[HTTPStatus] = None
-    ):
-        self.content_type = content_type or "application/json"
+    def __init__(self, content_type=None, body=None, status: HTTPStatus = None):
+        self.content_type = content_type
         self.body = body
         self.status = status or HTTPStatus.OK
         self.status = f"{int(self.status)} {self.status.phrase}"
 
     def as_bytes(self):
-        if self.content_type not in ["application/json", "text/html"]:
-            raise Error("Invalid content type")
+        if self.content_type not in DEFAULT_CONTENT_TYPES:
+            raise ValueError("Invalid content type")
 
         conversion = {
             "application/json": json.dumps,
             "text/html": lambda body: body,
         }
-
         body = conversion[self.content_type](self.body).encode("utf-8")
         return [body]
 
@@ -117,19 +114,25 @@ class Response:
 
 
 class CarsEndpoint:
-    def get(self, request: Request):
+    def get(self, request: Request) -> Response:
         return Response(
             body={"cars": ["Dodge", "Honda", "Kia", "Toyota"]},
             status=HTTPStatus.OK,
+            content_type="application/json",
         )
 
-    def post(self, request: Request):
+    def post(self, request: Request) -> Response:
         payload = json.loads(request.wsgi_input.read())
         new_car = payload["car"]
+
         return Response(
             body={"cars": [new_car, "Dodge", "Honda", "Kia", "Toyota"]},
             status=HTTPStatus.CREATED,
+            content_type="application/json",
         )
 
 
-app = Pyyt(routes={"/cars": CarsEndpoint()})
+routes = {
+    "/cars": CarsEndpoint(),
+}
+app = Pyyt(routes=routes)

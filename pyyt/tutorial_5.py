@@ -9,7 +9,7 @@ import sys
 import uuid
 import logging
 import json
-from typing import Dict, List, Optional
+from typing import Dict, List
 from http import HTTPStatus
 
 DEFAULT_CONTENT_TYPES = ["application/json", "text/html"]
@@ -70,7 +70,7 @@ class Pyyt:
         status, headers, body = response.wsgi_response()
 
         for middleware in self.middlewares:
-            status, headers, body = middleware.postprocess_request(
+            status, headers, body, request = middleware.postprocess_request(
                 status, headers, body, request
             )
 
@@ -85,23 +85,20 @@ class Request:
 
 
 class Response:
-    def __init__(
-        self, content_type=None, body=None, status: Optional[HTTPStatus] = None
-    ):
-        self.content_type = content_type or "application/json"
+    def __init__(self, content_type=None, body=None, status: HTTPStatus = None):
+        self.content_type = content_type
         self.body = body
         self.status = status or HTTPStatus.OK
         self.status = f"{int(self.status)} {self.status.phrase}"
 
     def as_bytes(self):
-        if self.content_type not in ["application/json", "text/html"]:
-            raise Error("Invalid content type")
+        if self.content_type not in DEFAULT_CONTENT_TYPES:
+            raise ValueError("Invalid content type")
 
         conversion = {
             "application/json": json.dumps,
             "text/html": lambda body: body,
         }
-
         body = conversion[self.content_type](self.body).encode("utf-8")
         return [body]
 
@@ -116,18 +113,21 @@ class Response:
 
 
 class CarsEndpoint:
-    def get(self, request: Request):
+    def get(self, request: Request) -> Response:
         return Response(
             body={"cars": ["Dodge", "Honda", "Kia", "Toyota"]},
             status=HTTPStatus.OK,
+            content_type="application/json",
         )
 
-    def post(self, request: Request):
+    def post(self, request: Request) -> Response:
         payload = json.loads(request.wsgi_input.read())
         new_car = payload["car"]
+
         return Response(
             body={"cars": [new_car, "Dodge", "Honda", "Kia", "Toyota"]},
             status=HTTPStatus.CREATED,
+            content_type="application/json",
         )
 
 
@@ -137,14 +137,13 @@ class RequestIdMiddleware:
         return request
 
     def postprocess_request(self, status, headers, body, request):
-        return status, headers, body
+        return status, headers, body, request
 
 
 class LoggingMiddleware:
     def __init__(self):
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.INFO)
-        # for demo purposes
         handler = logging.StreamHandler(sys.stdout)
         self.logger.addHandler(handler)
 
@@ -153,10 +152,13 @@ class LoggingMiddleware:
 
     def postprocess_request(self, status, headers, body, request):
         self.logger.info(f"Request {request.id} completed with status {status}")
-        return status, headers, body
+        return status, headers, body, request
 
 
+routes = {
+    "/cars": CarsEndpoint(),
+}
 app = Pyyt(
-    routes={"/cars": CarsEndpoint()},
+    routes=routes,
     middlewares=[RequestIdMiddleware(), LoggingMiddleware()],
 )
