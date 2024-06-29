@@ -1,14 +1,17 @@
 """
 Refactor to use a class and rough draft of basic web framework life cycle
 """
-from typing import Dict, List, Callable
+from typing import Callable, Dict, List
 
 DEFAULT_CONTENT_TYPES = ["application/json", "text/html"]
 
 
 class Pyyt:
     def __init__(
-        routes: Dict, middleware: List = None, allowed_content_types: List[str] = None
+        self,
+        routes: Dict,
+        middleware: List = None,
+        allowed_content_types: List[str] = None,
     ):
         self.routes = routes
         self.middleware = middleware or []
